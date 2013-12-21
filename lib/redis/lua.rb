@@ -3,7 +3,7 @@ require 'digest/sha1'
 
 class Redis
   module Lua
-    Version = '0.0.1'
+    Version = '0.1.0'
 
     def run_script(name, *args)
       raise "Nonexistent Lua script!" unless s = scripts.find { |script| script.name == name }
