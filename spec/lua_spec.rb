@@ -62,5 +62,31 @@ describe Redis do
       $redis.script(:flush)
       $redis.run_script(:argless).should == 1
     end
+
+    it "in a transaction should execute a Lua script that hasn't been run before without losing the transaction" do
+      result = nil
+
+      $redis.multi do
+        $redis.incr 'key'
+        result = $redis.run_script :argless
+      end
+
+      $redis.get('key').should == '1'
+      result.class.should == Redis::Future
+      result.value.should == 1
+    end
+
+    it "in a pipeline should execute a Lua script that hasn't been run before" do
+      result = nil
+
+      $redis.pipelined do
+        $redis.incr 'key'
+        result = $redis.run_script :argless
+      end
+
+      $redis.get('key').should == '1'
+      result.class.should == Redis::Future
+      result.value.should == 1
+    end
   end
 end

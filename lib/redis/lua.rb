@@ -7,13 +7,21 @@ class Redis
 
     def run_script(name, *args)
       raise "Nonexistent Lua script!" unless s = scripts.find { |script| script.name == name }
-      evalsha s.sha, *args
-    rescue CommandError => e
-      if e.message =~ /\ANOSCRIPT/
-        script :load, s.text
-        evalsha s.sha, *args
-      else
-        raise
+
+      case @client
+      when Client
+        begin
+          evalsha s.sha, *args
+        rescue CommandError => e
+          raise unless e.message =~ /\ANOSCRIPT/
+          script :load, s.text
+          evalsha s.sha, *args
+        end
+      when Pipeline
+        # When pipelining or in a transaction block, an error will abort the
+        # whole thing and there's no way to check whether the script has
+        # already been loaded. So, to be safe, just eval the script text.
+        eval s.text, *args
       end
     end
 
