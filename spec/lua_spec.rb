@@ -90,3 +90,17 @@ describe Redis do
     end
   end
 end
+
+describe Redis::Pool do
+  it "should work as expected" do
+    $redis_pool.register_script(:my_script, 'return 1')
+
+    10.times.map do
+      Thread.new do
+        10.times do
+          $redis_pool.run_script(:my_script).should == 1
+        end
+      end
+    end.each(&:join)
+  end
+end
